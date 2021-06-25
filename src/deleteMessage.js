@@ -25,7 +25,7 @@ module.exports = function (defaultFuncs, api, ctx) {
 
     if (utils.getType(messageOrMessages) !== "Array") messageOrMessages = [messageOrMessages];
 
-    for (var i = 0; i < messageOrMessages.length; i++)       form["message_ids[" + i + "]"] = messageOrMessages[i];
+    for (var i = 0; i < messageOrMessages.length; i++) form["message_ids[" + i + "]"] = messageOrMessages[i];
 
     defaultFuncs
       .post("https://www.facebook.com/ajax/mercury/delete_messages.php", ctx.jar, form)

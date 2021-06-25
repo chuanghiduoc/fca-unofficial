@@ -40,9 +40,7 @@ function isReadableStream(obj) {
 
 function get(url, jar, qs, options, ctx) {
   // I'm still confused about this
-  if (getType(qs) === "Object") {
-    for (var prop in qs) if (qs.hasOwnProperty(prop) && getType(qs[prop]) === "Object") qs[prop] = JSON.stringify(qs[prop]);
-  }
+  if (getType(qs) === "Object") for (var prop in qs) if (qs.hasOwnProperty(prop) && getType(qs[prop]) === "Object") qs[prop] = JSON.stringify(qs[prop]);
   var op = {
     headers: getHeaders(url, options, ctx),
     timeout: 60000,
@@ -659,12 +657,7 @@ function formatDeltaMessage(m) {
   var m_offset = mdata.map(u => u.o);
   var m_length = mdata.map(u => u.l);
   var mentions = {};
-  for (var i = 0; i < m_id.length; i++) {
-    mentions[m_id[i]] = m.delta.body.substring(
-      m_offset[i],
-      m_offset[i] + m_length[i]
-    );
-  }
+  for (var i = 0; i < m_id.length; i++) mentions[m_id[i]] = m.delta.body.substring(m_offset[i], m_offset[i] + m_length[i]);
 
   return {
     type: "message",
@@ -682,11 +675,8 @@ function formatDeltaMessage(m) {
 }
 
 function formatID(id) {
-  if (id != undefined && id != null) {
-    return id.replace(/(fb)?id[:.]/, "");
-  } else {
-    return id;
-  }
+  if (id != undefined && id != null) return id.replace(/(fb)?id[:.]/, "");
+  else return id;
 }
 
 function formatMessage(m) {
@@ -695,27 +685,17 @@ function formatMessage(m) {
     type: "message",
     senderName: originalMessage.sender_name,
     senderID: formatID(originalMessage.sender_fbid.toString()),
-    participantNames: originalMessage.group_thread_info
-      ? originalMessage.group_thread_info.participant_names
-      : [originalMessage.sender_name.split(" ")[0]],
+    participantNames: originalMessage.group_thread_info ? originalMessage.group_thread_info.participant_names : [originalMessage.sender_name.split(" ")[0]],
     participantIDs: originalMessage.group_thread_info
       ? originalMessage.group_thread_info.participant_ids.map(function (v) {
         return formatID(v.toString());
       })
       : [formatID(originalMessage.sender_fbid)],
     body: originalMessage.body || "",
-    threadID: formatID(
-      (
-        originalMessage.thread_fbid || originalMessage.other_user_fbid
-      ).toString()
-    ),
-    threadName: originalMessage.group_thread_info
-      ? originalMessage.group_thread_info.name
-      : originalMessage.sender_name,
+    threadID: formatID((originalMessage.thread_fbid || originalMessage.other_user_fbid).toString()),
+    threadName: originalMessage.group_thread_info ? originalMessage.group_thread_info.name : originalMessage.sender_name,
     location: originalMessage.coordinates ? originalMessage.coordinates : null,
-    messageID: originalMessage.mid
-      ? originalMessage.mid.toString()
-      : originalMessage.message_id,
+    messageID: originalMessage.mid ? originalMessage.mid.toString() : originalMessage.message_id,
     attachments: formatAttachment(
       originalMessage.attachments,
       originalMessage.attachmentIds,
@@ -731,8 +711,7 @@ function formatMessage(m) {
     isUnread: originalMessage.is_unread
   };
 
-  if (m.type === "pages_messaging")
-    obj.pageID = m.realtime_viewer_fbid.toString();
+  if (m.type === "pages_messaging") obj.pageID = m.realtime_viewer_fbid.toString();
   obj.isGroup = obj.participantIDs.length > 2;
 
   return obj;
@@ -744,12 +723,9 @@ function formatEvent(m) {
   var logMessageData;
   if (logMessageType === "log:generic-admin-text") {
     logMessageData = originalMessage.log_message_data.untypedData;
-    logMessageType = getAdminTextMessageType(
-      originalMessage.log_message_data.message_type
-    );
-  } else {
-    logMessageData = originalMessage.log_message_data;
+    logMessageType = getAdminTextMessageType(originalMessage.log_message_data.message_type);
   }
+  else logMessageData = originalMessage.log_message_data;
 
   return Object.assign(formatMessage(originalMessage), {
     type: "event",
@@ -814,12 +790,7 @@ function formatDeltaEvent(m) {
 
   return {
     type: "event",
-    threadID: formatID(
-      (
-        m.messageMetadata.threadKey.threadFbId ||
-        m.messageMetadata.threadKey.otherUserFbId
-      ).toString()
-    ),
+    threadID: formatID((m.messageMetadata.threadKey.threadFbId || m.messageMetadata.threadKey.otherUserFbId).toString()),
     logMessageType: logMessageType,
     logMessageData: logMessageData,
     logMessageBody: m.messageMetadata.adminText,
@@ -831,9 +802,7 @@ function formatTyp(event) {
   return {
     isTyping: !!event.st,
     from: event.from.toString(),
-    threadID: formatID(
-      (event.to || event.thread_fbid || event.from).toString()
-    ),
+    threadID: formatID((event.to || event.thread_fbid || event.from).toString()),
     // When receiving typ indication from mobile, `from_mobile` isn't set.
     // If it is, we just use that value.
     fromMobile: event.hasOwnProperty("from_mobile") ? event.from_mobile : true,
@@ -848,9 +817,7 @@ function formatDeltaReadReceipt(delta) {
   return {
     reader: (delta.threadKey.otherUserFbId || delta.actorFbId).toString(),
     time: delta.actionTimestampMs,
-    threadID: formatID(
-      (delta.threadKey.otherUserFbId || delta.threadKey.threadFbId).toString()
-    ),
+    threadID: formatID((delta.threadKey.otherUserFbId || delta.threadKey.threadFbId).toString()),
     type: "read_receipt"
   };
 }
@@ -866,12 +833,7 @@ function formatReadReceipt(event) {
 
 function formatRead(event) {
   return {
-    threadID: formatID(
-      (
-        (event.chat_ids && event.chat_ids[0]) ||
-        (event.thread_fbids && event.thread_fbids[0])
-      ).toString()
-    ),
+    threadID: formatID(((event.chat_ids && event.chat_ids[0]) || (event.thread_fbids && event.thread_fbids[0])).toString()),
     time: event.timestamp,
     type: "read"
   };
@@ -883,9 +845,7 @@ function getFrom(str, startToken, endToken) {
 
   var lastHalf = str.substring(start);
   var end = lastHalf.indexOf(endToken);
-  if (end === -1) {
-    throw Error("Could not find endTime `" + endToken + "` in the given string.");
-  }
+  if (end === -1) throw Error("Could not find endTime `" + endToken + "` in the given string.");
   return lastHalf.substring(0, end);
 }
 
@@ -955,7 +915,7 @@ function makeDefaults(html, userID, ctx) {
   // }
 
   var ttstamp = "2";
-  for (var i = 0; i < fb_dtsg.length; i++)     ttstamp += fb_dtsg.charCodeAt(i);
+  for (var i = 0; i < fb_dtsg.length; i++) ttstamp += fb_dtsg.charCodeAt(i);
   var revision = getFrom(html, 'revision":', ",");
 
   function mergeWithDefaults(obj) {
@@ -992,9 +952,7 @@ function makeDefaults(html, userID, ctx) {
     // }
 
     if (!obj) return newObj;
-
     for (var prop in obj) if (obj.hasOwnProperty(prop)) if (!newObj[prop]) newObj[prop] = obj[prop];
-
     return newObj;
   }
 
@@ -1025,9 +983,7 @@ function makeDefaults(html, userID, ctx) {
 }
 
 function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
-  if (retryCount == undefined) {
-    retryCount = 0;
-  }
+  if (retryCount == undefined) retryCount = 0;
   return function (data) {
     return bluebird.try(function () {
       log.verbose("parseAndCheckLogin", data.body);
@@ -1041,25 +997,9 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
         }
         retryCount++;
         var retryTime = Math.floor(Math.random() * 5000);
-        log.warn(
-          "parseAndCheckLogin",
-          "Got status code " +
-          data.statusCode +
-          " - " +
-          retryCount +
-          ". attempt to retry in " +
-          retryTime +
-          " milliseconds..."
-        );
-        var url =
-          data.request.uri.protocol +
-          "//" +
-          data.request.uri.hostname +
-          data.request.uri.pathname;
-        if (
-          data.request.headers["Content-Type"].split(";")[0] ===
-          "multipart/form-data"
-        ) {
+        log.warn("parseAndCheckLogin", "Got status code " + data.statusCode + " - " + retryCount + ". attempt to retry in " + retryTime + " milliseconds...");
+        var url = data.request.uri.protocol + "//" + data.request.uri.hostname + data.request.uri.pathname;
+        if (data.request.headers["Content-Type"].split(";")[0] === "multipart/form-data") {
           return bluebird
             .delay(retryTime)
             .then(function () {
@@ -1081,12 +1021,7 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
             .then(parseAndCheckLogin(ctx, defaultFuncs, retryCount));
         }
       }
-      if (data.statusCode !== 200)
-        throw new Error(
-          "parseAndCheckLogin got status code: " +
-          data.statusCode +
-          ". Bailing out of trying to parse response."
-        );
+      if (data.statusCode !== 200) throw new Error("parseAndCheckLogin got status code: " + data.statusCode + ". Bailing out of trying to parse response.");
 
       var res = null;
       try {
@@ -1104,16 +1039,8 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
       if (res.redirect && data.request.method === "GET") return defaultFuncs.get(res.redirect, ctx.jar).then(parseAndCheckLogin(ctx, defaultFuncs));
 
       // TODO: handle multiple cookies?
-      if (
-        res.jsmods &&
-        res.jsmods.require &&
-        Array.isArray(res.jsmods.require[0]) &&
-        res.jsmods.require[0][0] === "Cookie"
-      ) {
-        res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace(
-          "_js_",
-          ""
-        );
+      if (res.jsmods && res.jsmods.require && Array.isArray(res.jsmods.require[0]) && res.jsmods.require[0][0] === "Cookie") {
+        res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace("_js_", "");
         var cookie = formatCookie(res.jsmods.require[0][3], "facebook");
         var cookie2 = formatCookie(res.jsmods.require[0][3], "messenger");
         ctx.jar.setCookie(cookie, "https://www.facebook.com");
@@ -1130,7 +1057,7 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
 
             // Update ttstamp since that depends on fb_dtsg
             ctx.ttstamp = "2";
-            for (var j = 0; j < ctx.fb_dtsg.length; j++)               ctx.ttstamp += ctx.fb_dtsg.charCodeAt(j);
+            for (var j = 0; j < ctx.fb_dtsg.length; j++) ctx.ttstamp += ctx.fb_dtsg.charCodeAt(j);
           }
         }
       }
@@ -1177,22 +1104,7 @@ function formatDate(date) {
   m = m >= 10 ? m : "0" + m;
   var s = date.getUTCSeconds();
   s = s >= 10 ? s : "0" + s;
-  return (
-    NUM_TO_DAY[date.getUTCDay()] +
-    ", " +
-    d +
-    " " +
-    NUM_TO_MONTH[date.getUTCMonth()] +
-    " " +
-    date.getUTCFullYear() +
-    " " +
-    h +
-    ":" +
-    m +
-    ":" +
-    s +
-    " GMT"
-  );
+  return (NUM_TO_DAY[date.getUTCDay()] + ", " + d + " " + NUM_TO_MONTH[date.getUTCMonth()] + " " + date.getUTCFullYear() + " " + h + ":" + m + ":" + s + " GMT");
 }
 
 function formatCookie(arr, url) {
@@ -1281,9 +1193,7 @@ function decodeClientPayload(payload) {
         case 14:
           char2 = array[i++];
           char3 = array[i++];
-          out += String.fromCharCode(((c & 0x0F) << 12) |
-            ((char2 & 0x3F) << 6) |
-            ((char3 & 0x3F) << 0));
+          out += String.fromCharCode(((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
           break;
       }
     }

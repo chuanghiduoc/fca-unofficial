@@ -279,7 +279,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
 
           var mentions = {};
 
-          for (var i = 0; i < m_id.length; i++)             mentions[m_id[i]] = (delta.deltaMessageReply.message.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
+          for (var i = 0; i < m_id.length; i++) mentions[m_id[i]] = (delta.deltaMessageReply.message.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
           //Mention block - 1#
           var callbackToReturn = {
             type: "message_reply",
@@ -321,7 +321,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
 
             var rmentions = {};
 
-            for (var i = 0; i < m_id.length; i++)               rmentions[m_id[i]] = (delta.deltaMessageReply.repliedToMessage.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
+            for (var i = 0; i < m_id.length; i++) rmentions[m_id[i]] = (delta.deltaMessageReply.repliedToMessage.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
             //Mention block - 2#
             callbackToReturn.messageReply = {
               threadID: (delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId ? delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId : delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.otherUserFbId).toString(),
@@ -618,7 +618,7 @@ module.exports = function (defaultFuncs, api, ctx) {
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then((resData) => {
         if (utils.getType(resData) != "Array") throw { error: "Not logged in", res: resData };
-        if (resData && resData[resData.lngth - 1].error_results > 0) throw resData[0].o0.errors;
+        if (resData && resData[resData.length - 1].error_results > 0) throw resData[0].o0.errors;
         if (resData[resData.length - 1].successful_results === 0) throw { error: "getSeqId: there was no successful_results", res: resData };
         if (resData[0].o0.data.viewer.message_threads.sync_sequence_id) {
           ctx.lastSeqId = resData[0].o0.data.viewer.message_threads.sync_sequence_id;

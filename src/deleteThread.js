@@ -23,7 +23,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     };
 
     if (utils.getType(threadOrThreads) !== "Array") threadOrThreads = [threadOrThreads];
-    for (var i = 0; i < threadOrThreads.length; i++)       form["ids[" + i + "]"] = threadOrThreads[i];
+    for (var i = 0; i < threadOrThreads.length; i++) form["ids[" + i + "]"] = threadOrThreads[i];
 
     defaultFuncs
       .post("https://www.facebook.com/ajax/mercury/delete_thread.php", ctx.jar, form)

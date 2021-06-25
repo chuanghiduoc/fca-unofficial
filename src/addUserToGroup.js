@@ -55,7 +55,6 @@ module.exports = function (defaultFuncs, api, ctx) {
 
     for (var i = 0; i < userID.length; i++) {
       if (utils.getType(userID[i]) !== "Number" && utils.getType(userID[i]) !== "String") throw { error: "Elements of userID should be of type Number or String and not " + utils.getType(userID[i]) + "." };
-
       form["log_message_data[added_participants][" + i + "]"] = "fbid:" + userID[i];
     }
 

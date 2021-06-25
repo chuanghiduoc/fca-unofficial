@@ -29,7 +29,7 @@ module.exports = function (defaultFuncs, api, ctx) {
 
     var messageBox = accept ? "inbox" : "other";
 
-    for (var i = 0; i < threadID.length; i++)       form[messageBox + "[" + i + "]"] = threadID[i];
+    for (var i = 0; i < threadID.length; i++) form[messageBox + "[" + i + "]"] = threadID[i];
 
     defaultFuncs
       .post("https://www.facebook.com/ajax/mercury/move_thread.php", ctx.jar, form)

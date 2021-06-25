@@ -79,7 +79,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     // 2. User is sending a message to a specific user.
     // 3. No additional form params and the message goes to an existing group chat.
     if (utils.getType(threadID) === "Array") {
-      for (var i = 0; i < threadID.length; i++)         form["specific_to_list[" + i + "]"] = "fbid:" + threadID[i];
+      for (var i = 0; i < threadID.length; i++) form["specific_to_list[" + i + "]"] = "fbid:" + threadID[i];
       form["specific_to_list[" + threadID.length + "]"] = "fbid:" + ctx.userID;
       form["client_thread_id"] = "root:" + messageAndOTID;
       log.info("sendMessage", "Sending message to multiple users: " + threadID);

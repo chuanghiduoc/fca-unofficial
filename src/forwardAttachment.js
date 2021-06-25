@@ -28,7 +28,7 @@ module.exports = function (defaultFuncs, api, ctx) {
 
     //That's good, the key of the array is really timestmap in seconds + index
     //Probably time when the attachment will be sent?
-    for (var i = 0; i < userOrUsers.length; i++)       form["recipient_map[" + (timestamp + i) + "]"] = userOrUsers[i];
+    for (var i = 0; i < userOrUsers.length; i++) form["recipient_map[" + (timestamp + i) + "]"] = userOrUsers[i];
 
     defaultFuncs
       .post("https://www.facebook.com/mercury/attachments/forward/", ctx.jar, form)
