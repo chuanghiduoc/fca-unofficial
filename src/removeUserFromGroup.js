@@ -3,7 +3,7 @@
 var utils = require("../utils");
 var log = require("npmlog");
 
-module.exports = function(defaultFuncs, api, ctx) {
+module.exports = function (defaultFuncs, api, ctx) {
   return function removeUserFromGroup(userID, threadID, callback) {
     if (
       !callback &&
@@ -15,28 +15,15 @@ module.exports = function(defaultFuncs, api, ctx) {
     if (
       utils.getType(threadID) !== "Number" &&
       utils.getType(threadID) !== "String"
-    ) {
-      throw {
-        error:
-          "threadID should be of type Number or String and not " +
-          utils.getType(threadID) +
-          "."
-      };
-    }
+    ) throw { error: "threadID should be of type Number or String and not " + utils.getType(threadID) + "." };
+
     if (
       utils.getType(userID) !== "Number" &&
       utils.getType(userID) !== "String"
-    ) {
-      throw {
-        error:
-          "userID should be of type Number or String and not " +
-          utils.getType(userID) +
-          "."
-      };
-    }
+    ) throw { error: "userID should be of type Number or String and not " + utils.getType(userID) + "." };
 
-    var resolveFunc = function(){};
-    var rejectFunc = function(){};
+    var resolveFunc = function () { };
+    var rejectFunc = function () { };
     var returnPromise = new Promise(function (resolve, reject) {
       resolveFunc = resolve;
       rejectFunc = reject;
@@ -44,9 +31,8 @@ module.exports = function(defaultFuncs, api, ctx) {
 
     if (!callback) {
       callback = function (err, friendList) {
-        if (err) {
-          return rejectFunc(err);
-        }
+        if (err) return rejectFunc(err);
+
         resolveFunc(friendList);
       };
     }
@@ -59,17 +45,14 @@ module.exports = function(defaultFuncs, api, ctx) {
     defaultFuncs
       .post("https://www.facebook.com/chat/remove_participants", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-      .then(function(resData) {
-        if (!resData) {
-          throw { error: "Remove from group failed." };
-        }
-        if (resData.error) {
-          throw resData;
-        }
+      .then(function (resData) {
+        if (!resData) throw { error: "Remove from group failed." };
+
+        if (resData.error) throw resData;
 
         return callback();
       })
-      .catch(function(err) {
+      .catch(function (err) {
         log.error("removeUserFromGroup", err);
         return callback(err);
       });

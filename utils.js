@@ -9,14 +9,8 @@ var querystring = require("querystring");
 var url = require("url");
 
 function setProxy(url) {
-  if (typeof url == undefined)
-    return request = bluebird.promisify(require("request").defaults({
-      jar: true,
-    }));
-  return request = bluebird.promisify(require("request").defaults({
-    jar: true,
-    proxy: url
-  }));
+  if (typeof url == undefined) return request = bluebird.promisify(require("request").defaults({ jar: true }));
+  return request = bluebird.promisify(require("request").defaults({ jar: true, proxy: url }));
 }
 
 function getHeaders(url, options, ctx, customHeader) {
@@ -28,12 +22,9 @@ function getHeaders(url, options, ctx, customHeader) {
     "User-Agent": options.userAgent,
     Connection: "keep-alive"
   };
-  if (customHeader) {
-    Object.assign(headers, customHeader);
-  }
-  if (ctx && ctx.region) {
-    headers["X-MSGR-Region"] = ctx.region;
-  }
+  if (customHeader) Object.assign(headers, customHeader);
+
+  if (ctx && ctx.region) headers["X-MSGR-Region"] = ctx.region;
 
   return headers;
 }
@@ -50,11 +41,7 @@ function isReadableStream(obj) {
 function get(url, jar, qs, options, ctx) {
   // I'm still confused about this
   if (getType(qs) === "Object") {
-    for (var prop in qs) {
-      if (qs.hasOwnProperty(prop) && getType(qs[prop]) === "Object") {
-        qs[prop] = JSON.stringify(qs[prop]);
-      }
-    }
+    for (var prop in qs) if (qs.hasOwnProperty(prop) && getType(qs[prop]) === "Object") qs[prop] = JSON.stringify(qs[prop]);
   }
   var op = {
     headers: getHeaders(url, options, ctx),
@@ -131,9 +118,8 @@ function binaryToDecimal(data) {
       if (end >= 10) {
         fullName += "1";
         end -= 10;
-      } else {
-        fullName += "0";
       }
+      else fullName += "0";
     }
     ret = end.toString() + ret;
     data = fullName.slice(fullName.indexOf("1"));
@@ -177,10 +163,8 @@ var j = {
   V: "%2c%22blc%22%3a0%2c%22snd%22%3a0%2c%22ct%22%3a",
   W: "%2c%22s%22%3a0%2c%22blo%22%3a0%7d%2c%22bl%22%3a%7b%22ac%22%3a",
   X: "%2c%22ri%22%3a0%7d%2c%22state%22%3a%7b%22p%22%3a0%2c%22ut%22%3a1",
-  Y:
-    "%2c%22pt%22%3a0%2c%22vis%22%3a1%2c%22bls%22%3a0%2c%22blc%22%3a0%2c%22snd%22%3a1%2c%22ct%22%3a",
-  Z:
-    "%2c%22sb%22%3a1%2c%22t%22%3a%5b%5d%2c%22f%22%3anull%2c%22uct%22%3a0%2c%22s%22%3a0%2c%22blo%22%3a0%7d%2c%22bl%22%3a%7b%22ac%22%3a"
+  Y: "%2c%22pt%22%3a0%2c%22vis%22%3a1%2c%22bls%22%3a0%2c%22blc%22%3a0%2c%22snd%22%3a1%2c%22ct%22%3a",
+  Z: "%2c%22sb%22%3a1%2c%22t%22%3a%5b%5d%2c%22f%22%3anull%2c%22uct%22%3a0%2c%22s%22%3a0%2c%22blo%22%3a0%7d%2c%22bl%22%3a%7b%22ac%22%3a"
 };
 (function () {
   var l = [];
@@ -285,17 +269,15 @@ function _formatAttachment(attachment1, attachment2) {
   if (!type && attachment1.sticker_attachment) {
     type = "StickerAttachment";
     blob = attachment1.sticker_attachment;
-  } else if (!type && attachment1.extensible_attachment) {
+  }
+  else if (!type && attachment1.extensible_attachment) {
     if (
       attachment1.extensible_attachment.story_attachment &&
       attachment1.extensible_attachment.story_attachment.target &&
       attachment1.extensible_attachment.story_attachment.target.__typename &&
       attachment1.extensible_attachment.story_attachment.target.__typename === "MessageLocation"
-    ) {
-      type = "MessageLocation";
-    } else {
-      type = "ExtensibleAttachment";
-    }
+    ) type = "MessageLocation";
+    else type = "ExtensibleAttachment";
 
     blob = attachment1.extensible_attachment;
   }
@@ -517,9 +499,7 @@ function _formatAttachment(attachment1, attachment2) {
         ID: blob.id,
         url: blob.url,
 
-        packID: blob.pack
-          ? blob.pack.id
-          : null,
+        packID: blob.pack ? blob.pack.id : null,
         spriteUrl: blob.sprite_image,
         spriteUrl2x: blob.sprite_image_2x,
         width: blob.width,
@@ -590,9 +570,7 @@ function _formatAttachment(attachment1, attachment2) {
         description:
           blob.story_attachment.description &&
           blob.story_attachment.description.text,
-        source: blob.story_attachment.source
-          ? blob.story_attachment.source.text
-          : null,
+        source: blob.story_attachment.source ? blob.story_attachment.source.text : null,
 
         image:
           blob.story_attachment.media &&
@@ -613,9 +591,7 @@ function _formatAttachment(attachment1, attachment2) {
           blob.story_attachment.media &&
           blob.story_attachment.media.playable_duration_in_ms,
         playableUrl:
-          blob.story_attachment.media == null
-            ? null
-            : blob.story_attachment.media.playable_url,
+          blob.story_attachment.media == null ? null : blob.story_attachment.media.playable_url,
 
         subattachments: blob.story_attachment.subattachments,
         properties: blob.story_attachment.properties.reduce(function (obj, cur) {
@@ -908,9 +884,7 @@ function getFrom(str, startToken, endToken) {
   var lastHalf = str.substring(start);
   var end = lastHalf.indexOf(endToken);
   if (end === -1) {
-    throw Error(
-      "Could not find endTime `" + endToken + "` in the given string."
-    );
+    throw Error("Could not find endTime `" + endToken + "` in the given string.");
   }
   return lastHalf.substring(0, end);
 }
@@ -981,9 +955,7 @@ function makeDefaults(html, userID, ctx) {
   // }
 
   var ttstamp = "2";
-  for (var i = 0; i < fb_dtsg.length; i++) {
-    ttstamp += fb_dtsg.charCodeAt(i);
-  }
+  for (var i = 0; i < fb_dtsg.length; i++)     ttstamp += fb_dtsg.charCodeAt(i);
   var revision = getFrom(html, 'revision":', ",");
 
   function mergeWithDefaults(obj) {
@@ -1021,13 +993,7 @@ function makeDefaults(html, userID, ctx) {
 
     if (!obj) return newObj;
 
-    for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) {
-        if (!newObj[prop]) {
-          newObj[prop] = obj[prop];
-        }
-      }
-    }
+    for (var prop in obj) if (obj.hasOwnProperty(prop)) if (!newObj[prop]) newObj[prop] = obj[prop];
 
     return newObj;
   }
@@ -1068,8 +1034,7 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
       if (data.statusCode >= 500 && data.statusCode < 600) {
         if (retryCount >= 5) {
           throw {
-            error:
-              "Request retry failed. Check the `res` and `statusCode` property on this error.",
+            error: "Request retry failed. Check the `res` and `statusCode` property on this error.",
             statusCode: data.statusCode,
             res: data.body
           };
@@ -1106,7 +1071,8 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
               );
             })
             .then(parseAndCheckLogin(ctx, defaultFuncs, retryCount));
-        } else {
+        }
+        else {
           return bluebird
             .delay(retryTime)
             .then(function () {
@@ -1125,7 +1091,8 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
       var res = null;
       try {
         res = JSON.parse(makeParsable(data.body));
-      } catch (e) {
+      }
+      catch (e) {
         throw {
           error: "JSON.parse error. Check the `detail` property on this error.",
           detail: e,
@@ -1134,11 +1101,7 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
       }
 
       // In some cases the response contains only a redirect URL which should be followed
-      if (res.redirect && data.request.method === "GET") {
-        return defaultFuncs
-          .get(res.redirect, ctx.jar)
-          .then(parseAndCheckLogin(ctx, defaultFuncs));
-      }
+      if (res.redirect && data.request.method === "GET") return defaultFuncs.get(res.redirect, ctx.jar).then(parseAndCheckLogin(ctx, defaultFuncs));
 
       // TODO: handle multiple cookies?
       if (
@@ -1167,16 +1130,12 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
 
             // Update ttstamp since that depends on fb_dtsg
             ctx.ttstamp = "2";
-            for (var j = 0; j < ctx.fb_dtsg.length; j++) {
-              ctx.ttstamp += ctx.fb_dtsg.charCodeAt(j);
-            }
+            for (var j = 0; j < ctx.fb_dtsg.length; j++)               ctx.ttstamp += ctx.fb_dtsg.charCodeAt(j);
           }
         }
       }
 
-      if (res.error === 1357001) {
-        throw { error: "Not logged in." };
-      }
+      if (res.error === 1357001) throw { error: "Not logged in." };
       return res;
     });
   };
@@ -1186,9 +1145,7 @@ function saveCookies(jar) {
   return function (res) {
     var cookies = res.headers["set-cookie"] || [];
     cookies.forEach(function (c) {
-      if (c.indexOf(".facebook.com") > -1) {
-        jar.setCookie(c, "https://www.facebook.com");
-      }
+      if (c.indexOf(".facebook.com") > -1) jar.setCookie(c, "https://www.facebook.com");
       var c2 = c.replace(/domain=\.facebook\.com/, "domain=.messenger.com");
       jar.setCookie(c2, "https://www.messenger.com");
     });
@@ -1239,9 +1196,7 @@ function formatDate(date) {
 }
 
 function formatCookie(arr, url) {
-  return (
-    arr[0] + "=" + arr[1] + "; Path=" + arr[3] + "; Domain=" + url + ".com"
-  );
+  return arr[0] + "=" + arr[1] + "; Path=" + arr[3] + "; Domain=" + url + ".com";
 }
 
 function formatThread(data) {

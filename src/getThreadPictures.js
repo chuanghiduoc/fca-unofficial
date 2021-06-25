@@ -3,10 +3,10 @@
 var utils = require("../utils");
 var log = require("npmlog");
 
-module.exports = function(defaultFuncs, api, ctx) {
+module.exports = function (defaultFuncs, api, ctx) {
   return function getThreadPictures(threadID, offset, limit, callback) {
-    var resolveFunc = function(){};
-    var rejectFunc = function(){};
+    var resolveFunc = function () { };
+    var rejectFunc = function () { };
     var returnPromise = new Promise(function (resolve, reject) {
       resolveFunc = resolve;
       rejectFunc = reject;
@@ -14,9 +14,7 @@ module.exports = function(defaultFuncs, api, ctx) {
 
     if (!callback) {
       callback = function (err, friendList) {
-        if (err) {
-          return rejectFunc(err);
-        }
+        if (err) return rejectFunc(err);
         resolveFunc(friendList);
       };
     }
@@ -28,49 +26,31 @@ module.exports = function(defaultFuncs, api, ctx) {
     };
 
     defaultFuncs
-      .post(
-        "https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php",
-        ctx.jar,
-        form
-      )
+      .post("https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-      .then(function(resData) {
-        if (resData.error) {
-          throw resData;
-        }
+      .then(function (resData) {
+        if (resData.error) throw resData;
         return Promise.all(
-          resData.payload.imagesData.map(function(image) {
+          resData.payload.imagesData.map(function (image) {
             form = {
               thread_id: threadID,
               image_id: image.fbid
             };
             return defaultFuncs
-              .post(
-                "https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php",
-                ctx.jar,
-                form
-              )
+              .post("https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php", ctx.jar, form)
               .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-              .then(function(resData) {
-                if (resData.error) {
-                  throw resData;
-                }
+              .then(function (resData) {
+                if (resData.error) throw resData;
                 // the response is pretty messy
-                var queryThreadID =
-                  resData.jsmods.require[0][3][1].query_metadata.query_path[0]
-                    .message_thread;
-                var imageData =
-                  resData.jsmods.require[0][3][1].query_results[queryThreadID]
-                    .message_images.edges[0].node.image2;
+                var queryThreadID = resData.jsmods.require[0][3][1].query_metadata.query_path[0].message_thread;
+                var imageData = resData.jsmods.require[0][3][1].query_results[queryThreadID].message_images.edges[0].node.image2;
                 return imageData;
               });
           })
         );
       })
-      .then(function(resData) {
-        callback(null, resData);
-      })
-      .catch(function(err) {
+      .then(resData => callback(null, resData))
+      .catch(function (err) {
         log.error("Error in getThreadPictures", err);
         callback(err);
       });

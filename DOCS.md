@@ -25,7 +25,6 @@
 * [`api.getUserID`](#getUserID)
 * [`api.getUserInfo`](#getUserInfo)
 * [`api.handleMessageRequest`](#handleMessageRequest)
-* [`api.listen`](#listen)
 * [`api.listenMqtt`](#listenMqtt)
 * [`api.logout`](#logout)
 * [`api.markAsDelivered`](#markAsDelivered)
@@ -1656,6 +1655,7 @@ __Arguments__
 
 * `options` - An object containing the new values for the options that you want
   to set.  If the value for an option is unspecified, it is unchanged. The following options are possible.
+    - `pauseLog`: (Default `false`) Set this to `true` if you want to pause the npmlog output.
     - `logLevel`: The desired logging level as determined by npmlog.  Choose
       from either `"silly"`, `"verbose"`, `"info"`, `"http"`, `"warn"`, `"error"`, or `"silent"`.
     - `selfListen`: (Default `false`) Set this to `true` if you want your api

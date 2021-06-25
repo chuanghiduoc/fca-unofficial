@@ -27,12 +27,12 @@ var topics = [
   "/orca_presence",
   //Will receive /sr_res right here.
 
-  //"/inbox",
-  //"/mercury",
-  //"/messaging_events",
-  //"/orca_message_notifications",
-  //"/pp",
-  //"/webrtc_response",
+  "/inbox",
+  "/mercury",
+  "/messaging_events",
+  "/orca_message_notifications",
+  "/pp",
+  "/webrtc_response",
 ];
 
 function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
@@ -64,13 +64,9 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
   var cookies = ctx.jar.getCookies("https://www.facebook.com").join("; ");
 
   var host;
-  if (ctx.mqttEndpoint) {
-    host = `${ctx.mqttEndpoint}&sid=${sessionID}`;
-  } else if (ctx.region) {
-    host = `wss://edge-chat.facebook.com/chat?region=${ctx.region.toLocaleLowerCase()}&sid=${sessionID}`;
-  } else {
-    host = `wss://edge-chat.facebook.com/chat?sid=${sessionID}`;
-  }
+  if (ctx.mqttEndpoint) host = `${ctx.mqttEndpoint}&sid=${sessionID}`;
+  else if (ctx.region) host = `wss://edge-chat.facebook.com/chat?region=${ctx.region.toLocaleLowerCase()}&sid=${sessionID}`;
+  else host = `wss://edge-chat.facebook.com/chat?sid=${sessionID}`;
 
   var options = {
     clientId: "mqttwsclient",
@@ -105,20 +101,12 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
   mqttClient.on('error', function (err) {
     log.error("listenMqtt", err);
     mqttClient.end();
-    if (ctx.globalOptions.autoReconnect) {
-      getSeqID();
-    } else {
-      globalCallback({
-        type: "stop_listen",
-        error: "Connection refused: Server unavailable"
-      }, null);
-    }
+    if (ctx.globalOptions.autoReconnect) getSeqID();
+    else globalCallback({ type: "stop_listen", error: "Connection refused: Server unavailable" }, null);
   });
 
   mqttClient.on('connect', function () {
-    topics.forEach(function (topicsub) {
-      mqttClient.subscribe(topicsub);
-    });
+    topics.forEach(topicsub => mqttClient.subscribe(topicsub));
 
     var topic;
     var queue = {
@@ -133,7 +121,8 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
       topic = "/messenger_sync_get_diffs";
       queue.last_seq_id = ctx.lastSeqId;
       queue.sync_token = ctx.syncToken;
-    } else {
+    }
+    else {
       topic = "/messenger_sync_create_queue";
       queue.initial_titan_sequence_id = ctx.lastSeqId;
       queue.device_params = null;
@@ -159,29 +148,27 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
   mqttClient.on('message', function (topic, message, _packet) {
     try {
       var jsonMessage = JSON.parse(message);
-    } catch (ex) {
+    }
+    catch (ex) {
       return log.error("listenMqtt", ex);
     }
     if (topic === "/t_ms") {
-      if (ctx.tmsWait && typeof ctx.tmsWait == "function") {
-        ctx.tmsWait();
-      }
+      if (ctx.tmsWait && typeof ctx.tmsWait == "function") ctx.tmsWait();
 
       if (jsonMessage.firstDeltaSeqId && jsonMessage.syncToken) {
         ctx.lastSeqId = jsonMessage.firstDeltaSeqId;
         ctx.syncToken = jsonMessage.syncToken;
       }
 
-      if (jsonMessage.lastIssuedSeqId) {
-        ctx.lastSeqId = parseInt(jsonMessage.lastIssuedSeqId);
-      }
+      if (jsonMessage.lastIssuedSeqId) ctx.lastSeqId = parseInt(jsonMessage.lastIssuedSeqId);
 
       //If it contains more than 1 delta
       for (var i in jsonMessage.deltas) {
         var delta = jsonMessage.deltas[i];
         parseDelta(defaultFuncs, api, ctx, globalCallback, { "delta": delta });
       }
-    } else if (topic === "/thread_typing" || topic === "/orca_typing_notifications") {
+    }
+    else if (topic === "/thread_typing" || topic === "/orca_typing_notifications") {
       var typ = {
         type: "typ",
         isTyping: !!jsonMessage.state,
@@ -189,7 +176,8 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
         threadID: utils.formatID((jsonMessage.thread || jsonMessage.sender_fbid).toString())
       };
       (function () { globalCallback(null, typ); })();
-    } else if (topic === "/orca_presence") {
+    }
+    else if (topic === "/orca_presence") {
       if (!ctx.globalOptions.updatePresence) {
         for (var i in jsonMessage.list) {
           var data = jsonMessage.list[i];
@@ -218,17 +206,15 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
 function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
   if (v.delta.class == "NewMessage") {
     //Not tested for pages
-    if (ctx.globalOptions.pageID &&
-      ctx.globalOptions.pageID != v.queue
-    )
-      return;
+    if (ctx.globalOptions.pageID && ctx.globalOptions.pageID != v.queue) return;
 
     (function resolveAttachmentUrl(i) {
-      if (i == v.delta.attachments.length) {
+      if (v.delta.attachments && (i == v.delta.attachments.length)) {
         var fmtMsg;
         try {
           fmtMsg = utils.formatDeltaMessage(v);
-        } catch (err) {
+        }
+        catch (err) {
           return globalCallback({
             error: "Problem parsing message object. Please open an issue at https://github.com/Schmavery/facebook-chat-api/issues.",
             detail: err,
@@ -236,40 +222,24 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
             type: "parse_error"
           });
         }
-        if (fmtMsg) {
-          if (ctx.globalOptions.autoMarkDelivery) {
-            markDelivery(ctx, api, fmtMsg.threadID, fmtMsg.messageID);
-          }
+        if (fmtMsg) if (ctx.globalOptions.autoMarkDelivery) markDelivery(ctx, api, fmtMsg.threadID, fmtMsg.messageID);
+
+        return !ctx.globalOptions.selfListen && fmtMsg.senderID === ctx.userID ? undefined : (function () { globalCallback(null, fmtMsg); })();
+      }
+      else {
+        if (v.delta.attachments && (v.delta.attachments[i].mercury.attach_type == "photo")) {
+          api.resolvePhotoUrl(v.delta.attachments[i].fbid, (err, url) => {
+            if (!err) v.delta.attachments[i].mercury.metadata.url = url;
+            return resolveAttachmentUrl(i + 1);
+          });
         }
-        return !ctx.globalOptions.selfListen &&
-          fmtMsg.senderID === ctx.userID ?
-          undefined :
-          (function () { globalCallback(null, fmtMsg); })();
-      } else {
-        if (
-          v.delta.attachments[i].mercury.attach_type == "photo"
-        ) {
-          api.resolvePhotoUrl(
-            v.delta.attachments[i].fbid,
-            (err, url) => {
-              if (!err)
-                v.delta.attachments[
-                  i
-                ].mercury.metadata.url = url;
-              return resolveAttachmentUrl(i + 1);
-            }
-          );
-        } else {
-          return resolveAttachmentUrl(i + 1);
-        }
+        else return resolveAttachmentUrl(i + 1);
       }
     })(0);
   }
 
   if (v.delta.class == "ClientPayload") {
-    var clientPayload = utils.decodeClientPayload(
-      v.delta.payload
-    );
+    var clientPayload = utils.decodeClientPayload(v.delta.payload);
     if (clientPayload && clientPayload.deltas) {
       for (var i in clientPayload.deltas) {
         var delta = clientPayload.deltas[i];
@@ -277,23 +247,19 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           (function () {
             globalCallback(null, {
               type: "message_reaction",
-              threadID: (delta.deltaMessageReaction.threadKey
-                .threadFbId ?
-                delta.deltaMessageReaction.threadKey.threadFbId : delta.deltaMessageReaction.threadKey
-                  .otherUserFbId).toString(),
+              threadID: (delta.deltaMessageReaction.threadKey.threadFbId ? delta.deltaMessageReaction.threadKey.threadFbId : delta.deltaMessageReaction.threadKey.otherUserFbId).toString(),
               messageID: delta.deltaMessageReaction.messageId,
               reaction: delta.deltaMessageReaction.reaction,
               senderID: delta.deltaMessageReaction.senderId.toString(),
               userID: delta.deltaMessageReaction.userId.toString()
             });
           })();
-        } else if (delta.deltaRecallMessageData && !!ctx.globalOptions.listenEvents) {
+        }
+        else if (delta.deltaRecallMessageData && !!ctx.globalOptions.listenEvents) {
           (function () {
             globalCallback(null, {
               type: "message_unsend",
-              threadID: (delta.deltaRecallMessageData.threadKey.threadFbId ?
-                delta.deltaRecallMessageData.threadKey.threadFbId : delta.deltaRecallMessageData.threadKey
-                  .otherUserFbId).toString(),
+              threadID: (delta.deltaRecallMessageData.threadKey.threadFbId ? delta.deltaRecallMessageData.threadKey.threadFbId : delta.deltaRecallMessageData.threadKey.otherUserFbId).toString(),
               messageID: delta.deltaRecallMessageData.messageID,
               senderID: delta.deltaRecallMessageData.senderID.toString(),
               deletionTimestamp: delta.deltaRecallMessageData.deletionTimestamp,
@@ -313,18 +279,11 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
 
           var mentions = {};
 
-          for (var i = 0; i < m_id.length; i++) {
-            mentions[m_id[i]] = (delta.deltaMessageReply.message.body || "").substring(
-              m_offset[i],
-              m_offset[i] + m_length[i]
-            );
-          }
+          for (var i = 0; i < m_id.length; i++)             mentions[m_id[i]] = (delta.deltaMessageReply.message.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
           //Mention block - 1#
           var callbackToReturn = {
             type: "message_reply",
-            threadID: (delta.deltaMessageReply.message.messageMetadata.threadKey.threadFbId ?
-              delta.deltaMessageReply.message.messageMetadata.threadKey.threadFbId : delta.deltaMessageReply.message.messageMetadata.threadKey
-                .otherUserFbId).toString(),
+            threadID: (delta.deltaMessageReply.message.messageMetadata.threadKey.threadFbId ? delta.deltaMessageReply.message.messageMetadata.threadKey.threadFbId : delta.deltaMessageReply.message.messageMetadata.threadKey.otherUserFbId).toString(),
             messageID: delta.deltaMessageReply.message.messageMetadata.messageId,
             senderID: delta.deltaMessageReply.message.messageMetadata.actorFbId.toString(),
             attachments: delta.deltaMessageReply.message.attachments.map(function (att) {
@@ -335,7 +294,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               var x;
               try {
                 x = utils._formatAttachment(att);
-              } catch (ex) {
+              }
+              catch (ex) {
                 x = att;
                 x.error = ex;
                 x.type = "unknown";
@@ -361,17 +321,10 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
 
             var rmentions = {};
 
-            for (var i = 0; i < m_id.length; i++) {
-              rmentions[m_id[i]] = (delta.deltaMessageReply.repliedToMessage.body || "").substring(
-                m_offset[i],
-                m_offset[i] + m_length[i]
-              );
-            }
+            for (var i = 0; i < m_id.length; i++)               rmentions[m_id[i]] = (delta.deltaMessageReply.repliedToMessage.body || "").substring(m_offset[i], m_offset[i] + m_length[i]);
             //Mention block - 2#
             callbackToReturn.messageReply = {
-              threadID: (delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId ?
-                delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId : delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey
-                  .otherUserFbId).toString(),
+              threadID: (delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId ? delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId : delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.otherUserFbId).toString(),
               messageID: delta.deltaMessageReply.repliedToMessage.messageMetadata.messageId,
               senderID: delta.deltaMessageReply.repliedToMessage.messageMetadata.actorFbId.toString(),
               attachments: delta.deltaMessageReply.repliedToMessage.attachments.map(function (att) {
@@ -382,7 +335,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
                 var x;
                 try {
                   x = utils._formatAttachment(att);
-                } catch (ex) {
+                }
+                catch (ex) {
                   x = att;
                   x.error = ex;
                   x.type = "unknown";
@@ -394,7 +348,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               mentions: rmentions,
               timestamp: delta.deltaMessageReply.repliedToMessage.messageMetadata.timestamp
             };
-          } else if (delta.deltaMessageReply.replyToMessageId) {
+          }
+          else if (delta.deltaMessageReply.replyToMessageId) {
             return defaultFuncs
               .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, {
                 "av": ctx.globalOptions.pageID,
@@ -413,20 +368,12 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               })
               .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
               .then((resData) => {
-                if (resData[resData.length - 1].error_results > 0) {
-                  throw resData[0].o0.errors;
-                }
-
-                if (resData[resData.length - 1].successful_results === 0) {
-                  throw { error: "forcedFetch: there was no successful_results", res: resData };
-                }
-
+                if (resData[resData.length - 1].error_results > 0) throw resData[0].o0.errors;
+                if (resData[resData.length - 1].successful_results === 0) throw { error: "forcedFetch: there was no successful_results", res: resData };
                 var fetchData = resData[0].o0.data.message;
 
                 var mobj = {};
-                for (var n in fetchData.message.ranges) {
-                  mobj[fetchData.message.ranges[n].entity.id] = (fetchData.message.text || "").substr(fetchData.message.ranges[n].offset, fetchData.message.ranges[n].length);
-                }
+                for (var n in fetchData.message.ranges) mobj[fetchData.message.ranges[n].entity.id] = (fetchData.message.text || "").substr(fetchData.message.ranges[n].offset, fetchData.message.ranges[n].length);
 
                 callbackToReturn.messageReply = {
                   threadID: callbackToReturn.threadID,
@@ -435,10 +382,9 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
                   attachments: fetchData.message.blob_attachment.map(att => {
                     var x;
                     try {
-                      x = utils._formatAttachment({
-                        blob_attachment: att
-                      });
-                    } catch (ex) {
+                      x = utils._formatAttachment({ blob_attachment: att });
+                    }
+                    catch (ex) {
                       x = att;
                       x.error = ex;
                       x.type = "unknown";
@@ -451,47 +397,32 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
                   timestamp: parseInt(fetchData.timestamp_precise)
                 };
               })
-              .catch((err) => {
-                log.error("forcedFetch", err);
-              })
+              .catch(err => log.error("forcedFetch", err))
               .finally(function () {
-                if (ctx.globalOptions.autoMarkDelivery) {
-                  markDelivery(ctx, api, callbackToReturn.threadID, callbackToReturn.messageID);
-                }
-                !ctx.globalOptions.selfListen &&
-                  callbackToReturn.senderID === ctx.userID ?
-                  undefined :
-                  (function () { globalCallback(null, callbackToReturn); })();
+                if (ctx.globalOptions.autoMarkDelivery) markDelivery(ctx, api, callbackToReturn.threadID, callbackToReturn.messageID);
+                !ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID ? undefined : (function () { globalCallback(null, callbackToReturn); })();
               });
-          } else {
-            callbackToReturn.delta = delta;
           }
+          else callbackToReturn.delta = delta;
 
-          if (ctx.globalOptions.autoMarkDelivery) {
-            markDelivery(ctx, api, callbackToReturn.threadID, callbackToReturn.messageID);
-          }
+          if (ctx.globalOptions.autoMarkDelivery) markDelivery(ctx, api, callbackToReturn.threadID, callbackToReturn.messageID);
 
-          return !ctx.globalOptions.selfListen &&
-            callbackToReturn.senderID === ctx.userID ?
-            undefined :
-            (function () { globalCallback(null, callbackToReturn); })();
+          return !ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID ? undefined : (function () { globalCallback(null, callbackToReturn); })();
         }
       }
       return;
     }
   }
 
-  if (v.delta.class !== "NewMessage" &&
-    !ctx.globalOptions.listenEvents
-  )
-    return;
+  if (v.delta.class !== "NewMessage" && !ctx.globalOptions.listenEvents) return;
 
   switch (v.delta.class) {
     case "ReadReceipt":
       var fmtMsg;
       try {
         fmtMsg = utils.formatDeltaReadReceipt(v.delta);
-      } catch (err) {
+      }
+      catch (err) {
         return globalCallback({
           error: "Problem parsing message object. Please open an issue at https://github.com/Schmavery/facebook-chat-api/issues.",
           detail: err,
@@ -510,7 +441,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           var fmtMsg;
           try {
             fmtMsg = utils.formatDeltaEvent(v.delta);
-          } catch (err) {
+          }
+          catch (err) {
             return globalCallback({
               error: "Problem parsing message object. Please open an issue at https://github.com/Schmavery/facebook-chat-api/issues.",
               detail: err,
@@ -549,13 +481,9 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
           .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
           .then((resData) => {
-            if (resData[resData.length - 1].error_results > 0) {
-              throw resData[0].o0.errors;
-            }
+            if (resData[resData.length - 1].error_results > 0) throw resData[0].o0.errors;
 
-            if (resData[resData.length - 1].successful_results === 0) {
-              throw { error: "forcedFetch: there was no successful_results", res: resData };
-            }
+            if (resData[resData.length - 1].successful_results === 0) throw { error: "forcedFetch: there was no successful_results", res: resData };
 
             var fetchData = resData[0].o0.data.message;
 
@@ -641,13 +569,10 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
                     isGroup: (fetchData.message_sender.id != tid.toString())
                   });
               }
-            } else {
-              log.error("forcedFetch", fetchData);
             }
+            else log.error("forcedFetch", fetchData);
           })
-          .catch((err) => {
-            log.error("forcedFetch", err);
-          });
+          .catch((err) => log.error("forcedFetch", err));
       }
       break;
     case "ThreadName":
@@ -656,7 +581,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
       var formattedEvent;
       try {
         formattedEvent = utils.formatDeltaEvent(v.delta);
-      } catch (err) {
+      }
+      catch (err) {
         return globalCallback({
           error: "Problem parsing message object. Please open an issue at https://github.com/Schmavery/facebook-chat-api/issues.",
           detail: err,
@@ -664,25 +590,18 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           type: "parse_error"
         });
       }
-      return (!ctx.globalOptions.selfListen &&
-        formattedEvent.author.toString() === ctx.userID) ||
-        !ctx.loggedIn ?
-        undefined :
-        (function () { globalCallback(null, formattedEvent); })();
+      return (!ctx.globalOptions.selfListen && formattedEvent.author.toString() === ctx.userID) || !ctx.loggedIn ? undefined : (function () { globalCallback(null, formattedEvent); })();
   }
 }
 
 function markDelivery(ctx, api, threadID, messageID) {
   if (threadID && messageID) {
     api.markAsDelivered(threadID, messageID, (err) => {
-      if (err) {
-        log.error("markAsDelivered", err);
-      } else {
+      if (err) log.error("markAsDelivered", err);
+      else {
         if (ctx.globalOptions.autoMarkRead) {
           api.markAsRead(threadID, (err) => {
-            if (err) {
-              log.error("markAsDelivered", err);
-            }
+            if (err) log.error("markAsDelivered", err);
           });
         }
       }
@@ -698,33 +617,18 @@ module.exports = function (defaultFuncs, api, ctx) {
       .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then((resData) => {
-        if (utils.getType(resData) != "Array") {
-          throw {
-            error: "Not logged in",
-            res: resData
-          };
-        }
-
-        if (resData && resData[resData.length - 1].error_results > 0) {
-          throw resData[0].o0.errors;
-        }
-
-        if (resData[resData.length - 1].successful_results === 0) {
-          throw { error: "getSeqId: there was no successful_results", res: resData };
-        }
-
+        if (utils.getType(resData) != "Array") throw { error: "Not logged in", res: resData };
+        if (resData && resData[resData.lngth - 1].error_results > 0) throw resData[0].o0.errors;
+        if (resData[resData.length - 1].successful_results === 0) throw { error: "getSeqId: there was no successful_results", res: resData };
         if (resData[0].o0.data.viewer.message_threads.sync_sequence_id) {
           ctx.lastSeqId = resData[0].o0.data.viewer.message_threads.sync_sequence_id;
           listenMqtt(defaultFuncs, api, ctx, globalCallback);
-        } else {
-          throw { error: "getSeqId: no sync_sequence_id found.", res: resData };
         }
+        else throw { error: "getSeqId: no sync_sequence_id found.", res: resData };
       })
       .catch((err) => {
         log.error("getSeqId", err);
-        if (utils.getType(err) == "Object" && err.error === "Not logged in") {
-          ctx.loggedIn = false;
-        }
+        if (utils.getType(err) == "Object" && err.error === "Not logged in") ctx.loggedIn = false;
         return globalCallback(err);
       });
   };
@@ -749,9 +653,7 @@ module.exports = function (defaultFuncs, api, ctx) {
 
     var msgEmitter = new MessageEmitter();
     globalCallback = (callback || function (error, message) {
-      if (error) {
-        return msgEmitter.emit("error", error);
-      }
+      if (error) return msgEmitter.emit("error", error);
       msgEmitter.emit("message", message);
     });
 
@@ -777,11 +679,8 @@ module.exports = function (defaultFuncs, api, ctx) {
       })
     };
 
-    if (!ctx.firstListen || !ctx.lastSeqId) {
-      getSeqID();
-    } else {
-      listenMqtt(defaultFuncs, api, ctx, globalCallback);
-    }
+    if (!ctx.firstListen || !ctx.lastSeqId) getSeqID();
+    else listenMqtt(defaultFuncs, api, ctx, globalCallback);
     ctx.firstListen = false;
     return msgEmitter;
   };
