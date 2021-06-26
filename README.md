@@ -1,10 +1,7 @@
 This repo is a fork from main repo and will usually have new features bundled faster than main repo (and maybe bundle some bugs, too).
 
 # Unofficial Facebook Chat API
-<a href="https://www.npmjs.com/package/fca-unofficial"><img alt="npm version" src="https://img.shields.io/npm/v/fca-unofficial.svg?style=flat-square"></a>
-<img alt="version" src="https://img.shields.io/github/package-json/v/fca-unofficial/fca-unofficial?label=github&style=flat-square">
-<a href="https://www.npmjs.com/package/fca-unofficial"><img src="https://img.shields.io/npm/dm/fca-unofficial.svg?style=flat-square" alt="npm downloads"></a>
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+<img alt="version" src="https://img.shields.io/github/package-json/v/miraiPr0ject/fca-unofficial?label=github&style=flat-square">
 
 Facebook now has an official API for chat bots [here](https://developers.facebook.com/docs/messenger-platform).
 
@@ -121,7 +118,7 @@ login(credentials, (err, api) => {
 });
 ```
 
-Alternative: Use [c3c-fbstate](https://github.com/lequanglam/c3c-fbstate) to get fbstate.json (appstate.json)
+Alternative: Use [c3c-fbstate](https://github.com/c3cbot/c3c-fbstate) to get fbstate.json (appstate.json)
 
 ------------------------------------
 
@@ -201,6 +198,7 @@ login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, ap
 ## Projects using this API:
 
 - [c3c](https://github.com/lequanglam/c3c) - A bot that can be customizable using plugins. Support Facebook & Discord.
+- [Miraiv2](https://github.com/miraiPr0ject/miraiv2) - A simple Facebook Messenger Bot made by CatalizCS and SpermLord.
 
 ## Projects using this API (original repository, facebook-chat-api):
 
