@@ -181,11 +181,11 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
       if (!ctx.globalOptions.updatePresence) {
         for (var i in jsonMessage.list) {
           var data = jsonMessage.list[i];
-          var userID = data["u"] || "";
+          var userID = data["u"];
 
           var presence = {
             type: "presence",
-            userID: userID.toString(),
+            userID: String(userID),
             //Convert to ms
             timestamp: data["l"] * 1000,
             statuses: data["p"]
