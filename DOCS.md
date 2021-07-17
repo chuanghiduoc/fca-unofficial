@@ -191,7 +191,7 @@ __Arguments__
 ---------------------------------------
 
 <a name="changeAdminStatus"></a>
-### api.changeAdminStatus(threadID, adminIDs, adminStatus[, callback])
+### api.changeAdminStatus(threadID, adminIDs, adminStatus)
 
 Given a adminID, or an array of adminIDs, will set the admin status of the user(s) to `adminStatus`.
 
@@ -199,7 +199,6 @@ __Arguments__
 * `threadID`: ID of a group chat (can't use in one-to-one conversations)
 * `adminIDs`: The id(s) of users you wish to admin/unadmin (string or an array).
 * `adminStatus`: Boolean indicating whether the user(s) should be promoted to admin (`true`) or demoted to a regular user (`false`).
-* `callback(err)`: A callback called when the query is done (either with an error or null).
 
 __Example__
 
@@ -212,16 +211,12 @@ login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, ap
 
     let threadID = "0000000000000000";
     let newAdmins = ["111111111111111", "222222222222222"];
-    api.changeAdminStatus(threadID, newAdmins, true, editAdminsCallback);
+    await api.changeAdminStatus(threadID, newAdmins, true);
 
     let adminToRemove = "333333333333333";
-    api.changeAdminStatus(threadID, adminToRemove, false, editAdminsCallback);
+    await api.changeAdminStatus(threadID, adminToRemove, false);
 
 });
-
-function editAdminsCallback(err) {
-    if (err) return console.error(err);
-}
 
 ```
 
