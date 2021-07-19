@@ -46,6 +46,7 @@ function formatParticipants(participants) {
           isMessageBlockedByViewer: p.is_message_blocked_by_viewer, // true/false
         };
       case "ReducedMessagingActor":
+      case "UnavailableMessagingActor":
         return {
           accountType: p["__typename"],
           userID: utils.formatID(p.id.toString()),
@@ -55,18 +56,8 @@ function formatParticipants(participants) {
           username: (p.username || null), // maybe we could use it to generate profile URL?
           isMessageBlockedByViewer: p.is_message_blocked_by_viewer, // true/false
         };
-      case "UnavailableMessagingActor":
-        return {
-          accountType: p["__typename"],
-          userID: utils.formatID(p.id.toString()),
-          name: p.name, // "Facebook User" in user's language
-          url: createProfileUrl(p.url, p.username, p.id), // in this case p.url is null all the time
-          profilePicture: p.big_image_src.uri, // default male facebook photo
-          username: (p.username || null), // maybe we could use it to generate profile URL?
-          isMessageBlockedByViewer: p.is_message_blocked_by_viewer, // true/false
-        };
       default:
-        log.warn("getThreadList", "Found participant with unsupported typename. Please open an issue at https://github.com/Schmavery/fca-unofficial/issues\n" + JSON.stringify(p, null, 2));
+        log.warn("getThreadList", "Found participant with unsupported typename. Please open an issue at https://github.com/Schmavery/facebook-chat-api/issues\n" + JSON.stringify(p, null, 2));
         return {
           accountType: p["__typename"],
           userID: utils.formatID(p.id.toString()),

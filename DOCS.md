@@ -206,7 +206,7 @@ __Example__
 const fs = require("fs");
 const login = require("fca-unofficial");
 
-login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
+login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, async function(err, api) {
     if (err) return console.error(err);
 
     let threadID = "0000000000000000";
@@ -1033,7 +1033,7 @@ The message object will contain different fields based on its type (as determine
 		<th>Description</th>
 	</tr>
 	<tr>
-		<td rowspan="9">
+		<td rowspan="10">
 			<code>"message"</code><br />
 			A message was sent to a thread.
 		</td>
@@ -1069,11 +1069,15 @@ The message object will contain different fields based on its type (as determine
 		<td>Boolean representing whether or not the message was read.</td>
 	</tr>
 	<tr>
+		<td><code>participantIDs</code></td>
+		<td>An array containing participant IDs.</td>
+	</tr>	
+	<tr>
 		<td><code>type</code></td>
 		<td>For this event type, this will always be the string <code>"message"</code>.</td>
-	</tr>
+	</tr>	
 	<tr>
-		<td rowspan="6">
+		<td rowspan="7">
 			<code>"event"</code><br />
 			An event occurred within a thread. Note that receiving this event type needs to be enabled with `api.setOptions({ listenEvents: true })`
 		</td>
@@ -1090,12 +1094,16 @@ The message object will contain different fields based on its type (as determine
 	</tr>
 	<tr>
 		<td><code>logMessageType</code></td>
-		<td>String representing the type of event (<code>log:subscribe</code>, <code>log:unsubscribe</code>, <code>log:thread-name</code>, <code>log:thread-color</code>, <code>log:thread-icon</code>, <code>log:user-nickname</code>)</td>
+		<td>String representing the type of event (<code>log:subscribe</code>, <code>log:unsubscribe</code>, <code>log:thread-name</code>, <code>log:thread-color</code>, <code>log:thread-icon</code>, <code>log:user-nickname</code>, <code>log:thread-call</code>, <code>log:thread-admins</code>)</td>
 	</tr>
 	<tr>
 		<td><code>threadID</code></td>
 		<td>The threadID representing the thread in which the message was sent.</td>
 	</tr>
+	<tr>
+		<td><code>participantIDs</code></td>
+		<td>An array containing participant IDs.</td>
+	</tr>	
 	<tr>
 		<td><code>type</code></td>
 		<td>For this event type, this will always be the string <code>"event"</code>.</td>
@@ -1241,7 +1249,7 @@ The message object will contain different fields based on its type (as determine
 		<td>For this event type, this will always be the string <code>"message_unsend"</code>.</td>
 	</tr>
 	<tr>
-		<td rowspan="10">
+		<td rowspan="11">
 			<code>"message_reply"</code><br />
 			A reply message was sent to a thread.
 		</td>
@@ -1280,6 +1288,10 @@ The message object will contain different fields based on its type (as determine
 		<td><code>type</code></td>
 		<td>For this event type, this will always be the string <code>"message_reply"</code>.</td>
 	</tr>
+	<tr>
+		<td><code>participantIDs</code></td>
+		<td>An array containing participant IDs.</td>
+	</tr>	
 	<tr>
 		<td><code>messageReply</code></td>
 		<td>An object represent a message being replied. Content inside is the same like a normal <code>"message"</code> event.</td>
