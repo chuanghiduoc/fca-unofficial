@@ -16,15 +16,9 @@ See the [full changelog](/CHANGELOG.md) for release details.
 ## Install
 If you just want to use fca-unofficial, you should use this command:
 ```bash
-npm install fca-unofficial
+npm install @miraipr0ject/fca-unofficial
 ```
 It will download `fca-unofficial` from NPM repositories
-
-### Bleeding edge
-If you want to use bleeding edge (directly from github) to test new features or submit bug report, this is the command for you:
-```bash
-npm install fca-unofficial/fca-unofficial
-```
 
 ## Testing your bots
 If you want to test your bots without creating another account on Facebook, you can use [Facebook Whitehat Accounts](https://www.facebook.com/whitehat/accounts/).
